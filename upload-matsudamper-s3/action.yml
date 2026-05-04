@@ -1,5 +1,5 @@
-name: 'Upload to MinIO'
-description: 'Uploads a file to MinIO using OIDC and STS following project specifications'
+name: 'Upload to matsudamper S3'
+description: 'Uploads a file to matsudamper S3 (MinIO) using OIDC and STS following project specifications'
 inputs:
   file_path:
     description: 'Path to the local file to upload'
