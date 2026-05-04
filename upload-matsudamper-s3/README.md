@@ -30,7 +30,6 @@ permissions:
 | `role_arn` | MinIO の Role ARN | No | `arn:minio:iam:::role/tamgVaR1Cd1wW4XKj_NCS9NKzGE` |
 | `endpoint` | MinIO のエンドポイント URL | No | `https://s3.matsudamper.net` |
 | `bucket` | アップロード先のバケット名 | No | `github` |
-| `region` | リージョン名 | No | `us-east-1` |
 
 ## 出力引数 (Outputs)
 
