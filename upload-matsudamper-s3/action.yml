@@ -16,10 +16,6 @@ inputs:
     description: 'MinIO Bucket'
     required: true
     default: 'github'
-  region:
-    description: 'AWS/MinIO Region'
-    required: true
-    default: 'us-east-1'
 outputs:
   url:
     description: 'The external URL of the uploaded file'
@@ -44,7 +40,7 @@ runs:
           --role-arn ${{ inputs.role_arn }} \
           --role-session-name github-actions \
           --web-identity-token ${{ steps.get_token.outputs.result }} \
-          --region ${{ inputs.region }})
+          --region us-east-1)
         
         echo "AWS_ACCESS_KEY_ID=$(echo $CREDS | jq -r .Credentials.AccessKeyId)" >> $GITHUB_ENV
         echo "AWS_SECRET_ACCESS_KEY=$(echo $CREDS | jq -r .Credentials.SecretAccessKey)" >> $GITHUB_ENV
@@ -60,7 +56,7 @@ runs:
         
         aws s3 cp "${{ inputs.file_path }}" "${TARGET_PATH}${FILENAME}" \
           --endpoint-url ${{ inputs.endpoint }} \
-          --region ${{ inputs.region }}
+          --region us-east-1
 
         # 外部公開用URLの生成
         ENCODED_FILENAME=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1]))" "$FILENAME")
