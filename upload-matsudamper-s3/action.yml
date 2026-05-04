@@ -1,0 +1,64 @@
+name: 'Upload to matsudamper S3'
+description: 'Uploads a file to matsudamper S3 (MinIO) using OIDC and STS following project specifications'
+inputs:
+  file_path:
+    description: 'Path to the local file to upload'
+    required: true
+  role_arn:
+    description: 'MinIO Role ARN'
+    required: true
+    default: 'arn:minio:iam:::role/tamgVaR1Cd1wW4XKj_NCS9NKzGE'
+  endpoint:
+    description: 'MinIO Endpoint'
+    required: true
+    default: 'https://s3.matsudamper.net'
+  bucket:
+    description: 'MinIO Bucket'
+    required: true
+    default: 'github'
+outputs:
+  url:
+    description: 'The external URL of the uploaded file'
+    value: ${{ steps.upload.outputs.url }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Get GitHub OIDC Token
+      id: get_token
+      uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+      with:
+        script: |
+          return await core.getIDToken('${{ inputs.endpoint }}')
+        result-encoding: string
+
+    - name: Assume Role with MinIO STS
+      shell: bash
+      run: |
+        CREDS=$(aws sts assume-role-with-web-identity \
+          --endpoint-url ${{ inputs.endpoint }} \
+          --role-arn ${{ inputs.role_arn }} \
+          --role-session-name github-actions \
+          --web-identity-token ${{ steps.get_token.outputs.result }} \
+          --region us-east-1)
+        
+        echo "AWS_ACCESS_KEY_ID=$(echo $CREDS | jq -r .Credentials.AccessKeyId)" >> $GITHUB_ENV
+        echo "AWS_SECRET_ACCESS_KEY=$(echo $CREDS | jq -r .Credentials.SecretAccessKey)" >> $GITHUB_ENV
+        echo "AWS_SESSION_TOKEN=$(echo $CREDS | jq -r .Credentials.SessionToken)" >> $GITHUB_ENV
+
+    - name: Upload to MinIO
+      id: upload
+      shell: bash
+      run: |
+        FILENAME=$(basename "${{ inputs.file_path }}")
+        # リポジトリ名直下に Run ID / Attempt が来るパス構造
+        TARGET_PATH="s3://${{ inputs.bucket }}/${{ github.repository }}/${{ github.run_id }}/${{ github.run_attempt }}/"
+        
+        aws s3 cp "${{ inputs.file_path }}" "${TARGET_PATH}${FILENAME}" \
+          --endpoint-url ${{ inputs.endpoint }} \
+          --region us-east-1
+
+        # 外部公開用URLの生成
+        ENCODED_FILENAME=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1]))" "$FILENAME")
+        URL="${{ inputs.endpoint }}/${{ inputs.bucket }}/${{ github.repository }}/${{ github.run_id }}/${{ github.run_attempt }}/${ENCODED_FILENAME}"
+        echo "url=$URL" >> $GITHUB_OUTPUT
