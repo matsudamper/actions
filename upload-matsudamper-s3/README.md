@@ -1,6 +1,6 @@
 # Upload to matsudamper S3 Action
 
-GitHub Actions からセルフホストされた matsudamper S3 (MinIO) へ、OIDC を使用してファイルを安全にアップロードするための Composite Action です。
+GitHub Actions からセルフホストされた[Silo](https://github.com/pgsty/minio)へ、OIDC を使用してファイルをアップロードする。
 
 ## 前提条件
 
@@ -17,7 +17,7 @@ permissions:
 ```yaml
 - name: Upload Artifact
   id: upload_minio
-  uses: matsudamper/actions/upload-matsudamper-s3@main
+  uses: matsudamper/actions/upload-matsudamper-s3@hash # vx.x.x
   with:
     file_path: 'path/to/your/artifact.zip'
 ```
