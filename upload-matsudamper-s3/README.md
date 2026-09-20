@@ -43,11 +43,3 @@ permissions:
 `s3://<bucket>/<repository>/<run_id>/<run_attempt>/<filename>`
 
 この構造により、ワークフローの再実行時もファイルが衝突することなく、履歴が保持されます。
-
-## Content-Type について
-
-アップロードされるオブジェクトの `Content-Type` は常に `application/octet-stream` を指定します。
-
-aws cli の自動推定に任せると `app-xxx.apk.xz` のようなファイルで内側の `.apk` を拾って
-`application/vnd.android.package-archive` が付与され、Android の DownloadManager が
-MIME から拡張子を補完して `app-xxx.apk.xz.apk` という名前で保存してしまうためです。
