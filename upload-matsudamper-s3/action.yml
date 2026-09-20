@@ -54,11 +54,8 @@ runs:
         # リポジトリ名直下に Run ID / Attempt が来るパス構造
         TARGET_PATH="s3://${{ inputs.bucket }}/${{ github.repository }}/${{ github.run_id }}/${{ github.run_attempt }}/"
         
-        # Content-Type は常に application/octet-stream 固定。
-        # aws cli の推定に任せると app.apk.xz が
-        # application/vnd.android.package-archive になり、
-        # Android の DownloadManager が MIME から .apk を補完して
-        # app.apk.xz.apk として保存してしまうため。
+        # 末尾が圧縮拡張子のファイルは aws cli がそれを encoding 扱いし、
+        # 手前の拡張子で Content-Type を決めてしまうため固定する
         aws s3 cp "${{ inputs.file_path }}" "${TARGET_PATH}${FILENAME}" \
           --endpoint-url ${{ inputs.endpoint }} \
           --region us-east-1 \
