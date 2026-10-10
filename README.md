@@ -2,17 +2,17 @@
 
 GitHub Actions 用の composite actions 集です。
 
-## generate-qr-code
+## upload-qr-code
 
-文字列から QR コード PNG を生成します。`upload_artifact: 'true'` のとき `actions/upload-artifact` で artifact に登録できます。
+文字列から QR コード PNG を生成し、`actions/upload-artifact` で artifact に登録します。
 
 ```yaml
-- uses: matsudamper/actions/generate-qr-code@<commit-sha> # v1.1.0
+- uses: matsudamper/actions/upload-qr-code@<commit-sha> # v1.1.0
   with:
     url: 'https://example.com'
 ```
 
-詳細は [generate-qr-code/README.md](generate-qr-code/README.md) を参照してください。
+詳細は [upload-qr-code/README.md](upload-qr-code/README.md) を参照してください。
 
 ## upload-matsudamper-s3
 

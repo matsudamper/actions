@@ -1,0 +1,39 @@
+name: Test upload-qr-code
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Upload with artifact name
+        id: qr_named
+        uses: ./upload-qr-code
+        with:
+          url: 'https://example.com/named'
+          output_path: qr-named.png
+          artifact_name: test-qr-named
+
+      - name: Upload without artifact name
+        id: qr_default
+        uses: ./upload-qr-code
+        with:
+          url: 'https://example.com/default'
+          output_path: qr-default.png
+
+      - name: Verify PNG files and outputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f qr-named.png
+          test -f qr-default.png
+          file qr-named.png | grep -qi 'PNG image'
+          file qr-default.png | grep -qi 'PNG image'
+          [[ "${{ steps.qr_named.outputs.path }}" == "qr-named.png" ]]
+          [[ -n "${{ steps.qr_named.outputs.artifact-url }}" ]]
+          [[ "${{ steps.qr_default.outputs.path }}" == "qr-default.png" ]]
+          [[ -n "${{ steps.qr_default.outputs.artifact-url }}" ]]
