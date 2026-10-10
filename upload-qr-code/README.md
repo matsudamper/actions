@@ -2,6 +2,8 @@
 
 URL などの文字列から QR コード PNG を生成し、workflow artifact としてアップロードする。
 
+モジュール 1 点あたり 10 ピクセル、余白 4 モジュールで描画する（移行前の `qrcode[pil]` の `box_size=10` / `border=4` と同等）。
+
 ## 使い方
 
 ```yaml
