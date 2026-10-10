@@ -1,0 +1,69 @@
+name: 'Upload QR code'
+description: 'Generates a QR code PNG image and uploads it as a workflow artifact'
+inputs:
+  url:
+    description: 'String to encode as a QR code'
+    required: true
+  output_path:
+    description: 'Output path for the generated PNG file'
+    required: false
+    default: 'qrcode.png'
+  artifact_name:
+    description: 'Base name for the uploaded file when archive is false (appends .png if missing); empty uses output_path basename'
+    required: false
+    default: ''
+outputs:
+  path:
+    description: 'Path to the generated PNG file'
+    value: ${{ steps.generate.outputs.path }}
+  artifact-url:
+    description: 'Download URL from upload-artifact'
+    value: ${{ steps.upload.outputs.artifact-url }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Install qrencode
+      shell: bash
+      run: |
+        if command -v qrencode >/dev/null 2>&1; then
+          exit 0
+        fi
+        if ! command -v apt-get >/dev/null 2>&1; then
+          echo "::error::qrencode が見つかりません。apt-get が利用できない runner ではこの Action は使用できません（Ubuntu 前提）。"
+          exit 1
+        fi
+        sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends qrencode
+
+    - name: Generate QR code
+      id: generate
+      shell: bash
+      env:
+        QR_URL: ${{ inputs.url }}
+        OUTPUT_PATH: ${{ inputs.output_path }}
+        ARTIFACT_NAME: ${{ inputs.artifact_name }}
+      run: |
+        qrencode -o "$OUTPUT_PATH" -- "$QR_URL"
+        if [ ! -f "$OUTPUT_PATH" ]; then
+          echo "::error::QR コード PNG の生成に失敗しました: $OUTPUT_PATH"
+          exit 1
+        fi
+
+        UPLOAD_PATH="$OUTPUT_PATH"
+        if [ -n "$ARTIFACT_NAME" ]; then
+          UPLOAD_PATH="$ARTIFACT_NAME"
+          case "$UPLOAD_PATH" in
+            *.png) ;;
+            *) UPLOAD_PATH="${UPLOAD_PATH}.png" ;;
+          esac
+          cp "$OUTPUT_PATH" "$UPLOAD_PATH"
+        fi
+
+        echo "path=$OUTPUT_PATH" >> "$GITHUB_OUTPUT"
+        echo "upload_path=$UPLOAD_PATH" >> "$GITHUB_OUTPUT"
+
+    - name: Upload artifact
+      id: upload
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        path: ${{ steps.generate.outputs.upload_path }}
+        archive: false
