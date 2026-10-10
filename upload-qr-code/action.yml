@@ -42,7 +42,7 @@ runs:
         OUTPUT_PATH: ${{ inputs.output_path }}
         ARTIFACT_NAME: ${{ inputs.artifact_name }}
       run: |
-        qrencode -o "$OUTPUT_PATH" -- "$QR_URL"
+        qrencode -s 10 -o "$OUTPUT_PATH" -- "$QR_URL"
         if [ ! -f "$OUTPUT_PATH" ]; then
           echo "::error::QR コード PNG の生成に失敗しました: $OUTPUT_PATH"
           exit 1

@@ -50,3 +50,26 @@ jobs:
           [[ -n "${{ steps.qr_default.outputs.artifact-url }}" ]]
           [[ "${{ steps.qr_hyphen.outputs.path }}" == "qr-hyphen.png" ]]
           [[ -n "${{ steps.qr_hyphen.outputs.artifact-url }}" ]]
+
+          python3 - <<'PY'
+          import struct
+
+          expected_width = 330
+
+          def png_width(path: str) -> int:
+              with open(path, "rb") as f:
+                  f.read(16)
+                  width, _height = struct.unpack(">II", f.read(8))
+                  return width
+
+          for path in (
+              "qr-named.png",
+              "test-qr-named.png",
+              "qr-default.png",
+              "qr-hyphen.png",
+          ):
+              width = png_width(path)
+              if width != expected_width:
+                  raise SystemExit(f"{path}: width {width} != expected {expected_width}")
+              print(f"{path}: width={width}")
+          PY
