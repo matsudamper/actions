@@ -19,7 +19,7 @@ URL などの文字列から QR コード PNG を生成し、workflow artifact �
 | :--- | :--- | :--- | :--- |
 | `url` | QR コードにする文字列 | Yes | - |
 | `output_path` | 出力 PNG のパス | No | `qrcode.png` |
-| `artifact_name` | artifact 名（空のとき `name` を指定しない） | No | `''` |
+| `artifact_name` | アップロード時のファイル名（`archive: false` のため artifact 名になる。未指定時は `output_path` のファイル名） | No | `''` |
 
 ## 出力引数 (Outputs)
 

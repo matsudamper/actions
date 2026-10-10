@@ -9,7 +9,7 @@ inputs:
     required: false
     default: 'qrcode.png'
   artifact_name:
-    description: 'Artifact name when uploading; leave empty to omit the name input (file name is used when archive is false)'
+    description: 'Base name for the uploaded file when archive is false (appends .png if missing); empty uses output_path basename'
     required: false
     default: ''
 outputs:
@@ -18,7 +18,7 @@ outputs:
     value: ${{ steps.generate.outputs.path }}
   artifact-url:
     description: 'Download URL from upload-artifact'
-    value: ${{ steps.upload_named.outputs.artifact-url || steps.upload_default.outputs.artifact-url }}
+    value: ${{ steps.upload.outputs.artifact-url }}
 runs:
   using: 'composite'
   steps:
@@ -40,23 +40,30 @@ runs:
       env:
         QR_URL: ${{ inputs.url }}
         OUTPUT_PATH: ${{ inputs.output_path }}
+        ARTIFACT_NAME: ${{ inputs.artifact_name }}
       run: |
-        qrencode -o "$OUTPUT_PATH" "$QR_URL"
+        qrencode -o "$OUTPUT_PATH" -- "$QR_URL"
+        if [ ! -f "$OUTPUT_PATH" ]; then
+          echo "::error::QR コード PNG の生成に失敗しました: $OUTPUT_PATH"
+          exit 1
+        fi
+
+        UPLOAD_PATH="$OUTPUT_PATH"
+        if [ -n "$ARTIFACT_NAME" ]; then
+          UPLOAD_PATH="$ARTIFACT_NAME"
+          case "$UPLOAD_PATH" in
+            *.png) ;;
+            *) UPLOAD_PATH="${UPLOAD_PATH}.png" ;;
+          esac
+          cp "$OUTPUT_PATH" "$UPLOAD_PATH"
+        fi
+
         echo "path=$OUTPUT_PATH" >> "$GITHUB_OUTPUT"
+        echo "upload_path=$UPLOAD_PATH" >> "$GITHUB_OUTPUT"
 
-    - name: Upload artifact (named)
-      id: upload_named
-      if: inputs.artifact_name != ''
+    - name: Upload artifact
+      id: upload
       uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
-        name: ${{ inputs.artifact_name }}
-        path: ${{ steps.generate.outputs.path }}
-        archive: false
-
-    - name: Upload artifact (default name)
-      id: upload_default
-      if: inputs.artifact_name == ''
-      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-      with:
-        path: ${{ steps.generate.outputs.path }}
+        path: ${{ steps.generate.outputs.upload_path }}
         archive: false

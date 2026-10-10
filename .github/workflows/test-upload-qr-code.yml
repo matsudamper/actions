@@ -25,15 +25,28 @@ jobs:
           url: 'https://example.com/default'
           output_path: qr-default.png
 
+      - name: Upload URL starting with hyphen
+        id: qr_hyphen
+        uses: ./upload-qr-code
+        with:
+          url: '-https://example.com/hyphen'
+          output_path: qr-hyphen.png
+
       - name: Verify PNG files and outputs
         shell: bash
         run: |
           set -euo pipefail
           test -f qr-named.png
+          test -f test-qr-named.png
           test -f qr-default.png
+          test -f qr-hyphen.png
           file qr-named.png | grep -qi 'PNG image'
+          file test-qr-named.png | grep -qi 'PNG image'
           file qr-default.png | grep -qi 'PNG image'
+          file qr-hyphen.png | grep -qi 'PNG image'
           [[ "${{ steps.qr_named.outputs.path }}" == "qr-named.png" ]]
           [[ -n "${{ steps.qr_named.outputs.artifact-url }}" ]]
           [[ "${{ steps.qr_default.outputs.path }}" == "qr-default.png" ]]
           [[ -n "${{ steps.qr_default.outputs.artifact-url }}" ]]
+          [[ "${{ steps.qr_hyphen.outputs.path }}" == "qr-hyphen.png" ]]
+          [[ -n "${{ steps.qr_hyphen.outputs.artifact-url }}" ]]
