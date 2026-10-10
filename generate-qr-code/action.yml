@@ -1,0 +1,66 @@
+name: 'Generate QR code'
+description: 'Generates a QR code PNG image and optionally uploads it as a workflow artifact'
+inputs:
+  url:
+    description: 'String to encode as a QR code'
+    required: true
+  output_path:
+    description: 'Output path for the generated PNG file'
+    required: false
+    default: 'qrcode.png'
+  upload_artifact:
+    description: 'Whether to upload the generated file as a workflow artifact'
+    required: false
+    default: 'true'
+  artifact_name:
+    description: 'Artifact name when uploading; leave empty to omit the name input (file name is used when archive is false)'
+    required: false
+    default: ''
+outputs:
+  path:
+    description: 'Path to the generated PNG file'
+    value: ${{ steps.generate.outputs.path }}
+  artifact-url:
+    description: 'Download URL from upload-artifact; empty when upload is disabled'
+    value: ${{ steps.upload_named.outputs.artifact-url || steps.upload_default.outputs.artifact-url }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Install qrencode
+      shell: bash
+      run: |
+        if command -v qrencode >/dev/null 2>&1; then
+          exit 0
+        fi
+        if ! command -v apt-get >/dev/null 2>&1; then
+          echo "::error::qrencode が見つかりません。apt-get が利用できない runner ではこの Action は使用できません（Ubuntu 前提）。"
+          exit 1
+        fi
+        sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends qrencode
+
+    - name: Generate QR code
+      id: generate
+      shell: bash
+      env:
+        QR_URL: ${{ inputs.url }}
+        OUTPUT_PATH: ${{ inputs.output_path }}
+      run: |
+        qrencode -o "$OUTPUT_PATH" "$QR_URL"
+        echo "path=$OUTPUT_PATH" >> "$GITHUB_OUTPUT"
+
+    - name: Upload artifact (named)
+      id: upload_named
+      if: inputs.upload_artifact == 'true' && inputs.artifact_name != ''
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: ${{ inputs.artifact_name }}
+        path: ${{ steps.generate.outputs.path }}
+        archive: false
+
+    - name: Upload artifact (default name)
+      id: upload_default
+      if: inputs.upload_artifact == 'true' && inputs.artifact_name == ''
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        path: ${{ steps.generate.outputs.path }}
+        archive: false

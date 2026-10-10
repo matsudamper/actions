@@ -1,0 +1,40 @@
+name: Test generate-qr-code
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630cea1d87772a0675a8f5c2 # v4.2.2
+
+      - name: Generate with upload
+        id: qr_upload
+        uses: ./generate-qr-code
+        with:
+          url: 'https://example.com/with-upload'
+          output_path: qr-with-upload.png
+          upload_artifact: 'true'
+
+      - name: Generate without upload
+        id: qr_no_upload
+        uses: ./generate-qr-code
+        with:
+          url: 'https://example.com/no-upload'
+          output_path: qr-no-upload.png
+          upload_artifact: 'false'
+
+      - name: Verify PNG files and outputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f qr-with-upload.png
+          test -f qr-no-upload.png
+          file qr-with-upload.png | grep -qi 'PNG image'
+          file qr-no-upload.png | grep -qi 'PNG image'
+          [[ "${{ steps.qr_upload.outputs.path }}" == "qr-with-upload.png" ]]
+          [[ -n "${{ steps.qr_upload.outputs.artifact-url }}" ]]
+          [[ "${{ steps.qr_no_upload.outputs.path }}" == "qr-no-upload.png" ]]
+          [[ -z "${{ steps.qr_no_upload.outputs.artifact-url }}" ]]
