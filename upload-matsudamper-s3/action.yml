@@ -42,9 +42,13 @@ runs:
           --web-identity-token ${{ steps.get_token.outputs.result }} \
           --region us-east-1)
         
-        echo "AWS_ACCESS_KEY_ID=$(echo $CREDS | jq -r .Credentials.AccessKeyId)" >> $GITHUB_ENV
-        echo "AWS_SECRET_ACCESS_KEY=$(echo $CREDS | jq -r .Credentials.SecretAccessKey)" >> $GITHUB_ENV
-        echo "AWS_SESSION_TOKEN=$(echo $CREDS | jq -r .Credentials.SessionToken)" >> $GITHUB_ENV
+        SECRET_ACCESS_KEY=$(echo "$CREDS" | jq -r .Credentials.SecretAccessKey)
+        SESSION_TOKEN=$(echo "$CREDS" | jq -r .Credentials.SessionToken)
+        echo "::add-mask::$SECRET_ACCESS_KEY"
+        echo "::add-mask::$SESSION_TOKEN"
+        echo "AWS_ACCESS_KEY_ID=$(echo "$CREDS" | jq -r .Credentials.AccessKeyId)" >> $GITHUB_ENV
+        echo "AWS_SECRET_ACCESS_KEY=$SECRET_ACCESS_KEY" >> $GITHUB_ENV
+        echo "AWS_SESSION_TOKEN=$SESSION_TOKEN" >> $GITHUB_ENV
 
     - name: Upload to MinIO
       id: upload
