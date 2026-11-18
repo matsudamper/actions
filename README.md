@@ -17,3 +17,7 @@ GitHub Actions 用の composite actions 集です。
 ## upload-matsudamper-s3
 
 MinIO へ OIDC でファイルをアップロードします。詳細は [upload-matsudamper-s3/README.md](upload-matsudamper-s3/README.md) を参照してください。
+
+## gradle-remote-cache-credentials
+
+GitHub の OIDC で S3 の一時的な認証情報を受け取り、Gradle の S3 ビルドキャッシュに渡します。詳細は [gradle-remote-cache-credentials/README.md](gradle-remote-cache-credentials/README.md) を参照してください。
