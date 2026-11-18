@@ -1,0 +1,48 @@
+name: 'matsudamper Gradle remote cache credentials'
+description: 'Exchanges a GitHub OIDC token for temporary S3 credentials via STS and exports them for the Gradle S3 build cache'
+inputs:
+  endpoint:
+    description: 'S3 compatible endpoint. Also used as the OIDC token audience'
+    required: true
+    default: 'https://s3.matsudamper.net'
+  role_arn:
+    description: 'Role ARN for AssumeRoleWithWebIdentity'
+    required: true
+    default: 'arn:minio:iam:::role/tamgVaR1Cd1wW4XKj_NCS9NKzGE'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Get GitHub OIDC Token
+      id: get_token
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+      env:
+        AUDIENCE: ${{ inputs.endpoint }}
+      with:
+        script: |
+          return await core.getIDToken(process.env.AUDIENCE)
+        result-encoding: string
+
+    - name: Assume Role with STS
+      shell: bash
+      env:
+        ENDPOINT: ${{ inputs.endpoint }}
+        ROLE_ARN: ${{ inputs.role_arn }}
+        WEB_IDENTITY_TOKEN: ${{ steps.get_token.outputs.result }}
+      run: |
+        CREDS=$(aws sts assume-role-with-web-identity \
+          --endpoint-url "$ENDPOINT" \
+          --role-arn "$ROLE_ARN" \
+          --role-session-name gradle-remote-cache \
+          --web-identity-token "$WEB_IDENTITY_TOKEN" \
+          --region us-east-1)
+        ACCESS_KEY_ID=$(echo "$CREDS" | jq -r .Credentials.AccessKeyId)
+        SECRET_KEY=$(echo "$CREDS" | jq -r .Credentials.SecretAccessKey)
+        SESSION_TOKEN=$(echo "$CREDS" | jq -r .Credentials.SessionToken)
+        echo "::add-mask::$SECRET_KEY"
+        echo "::add-mask::$SESSION_TOKEN"
+        {
+          echo "S3_BUILD_CACHE_ACCESS_KEY_ID=$ACCESS_KEY_ID"
+          echo "S3_BUILD_CACHE_SECRET_KEY=$SECRET_KEY"
+          echo "S3_BUILD_CACHE_SESSION_TOKEN=$SESSION_TOKEN"
+        } >> "$GITHUB_ENV"
